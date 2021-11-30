@@ -7,6 +7,9 @@ In this doccumentation, we will cover
  3. Internet Connectivity | ping 8.8.8.8
  4. Access to Namespace from Outside of the network
 
+For Better View
+[Download PDF](https://github.com/dipanjal/DevOps/blob/main/NetNS_Ingress_Egress_Traffic/Network_NS_Egress_Ingress_Traffic_Configuration.pdf)
+
 ## Egress Packet Flow 
 ```mermaid
 sequenceDiagram 
