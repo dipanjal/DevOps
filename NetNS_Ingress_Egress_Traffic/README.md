@@ -1,15 +1,15 @@
-﻿# Network Namespace with Internet and Ingress Traffic
+# Network Namespace with Internet and Ingress Traffic
 
 In this doccumentation, we will cover
 
  1. Namespace to Bridge Communication
- 2. Namespace to Root Namespace Communication
+ 2. Namespace to Root Namespace Communication via Bridge
  3. Internet Connectivity | ping 8.8.8.8
  4. Access to Namespace from Outside of the network
 
 ## Egress Packet Flow
  
-Packet what goes outside. Let's say we are doing ping request from the **NS1** to google dns **8.8.8.8**
+Packet what **goes outside** called Egress Traffic. Let's say we are doing ping request from the **NS1** to google dns **8.8.8.8**
 
     ping 8.8.8.8
 
@@ -18,14 +18,15 @@ So, let's visualize how the network packet will travle?
 <a href="https://ibb.co/YXY12hf"><img src="https://i.ibb.co/KDRf6WV/Egress-Flow-drawio.png" alt="Egress-Flow-drawio" border="0" width="1000"></a>
 <center> Better Resolution: <a href="https://ibb.co/YXY12hf" target="_blank"> Egress Traffic Flow </a>  <center>
 
- 1. The packet will reach from NS1 **ceth0** to the Bridge **br0** via **Default Gateway**
- 2. Packet will be **forwarded** from Bridge **br0** to RootNS **eth0** 
+ 1. The packet will reach from NS1 **ceth0** to the Bridge **br0** 
+ 2. Packet will be **forwarded** from Bridge **br0** to RootNS **eth0** via **br0** (Default Gateway) 
  3. Packet will go out from **eth0**  to **outside** using **SNAT**
 
 ## Ingress Packet Flow 
-
-Let's assume we are running a **web server** inside **NS1** listening on port **5000**. 
-If we try to access this application from outside, how the packet will flow?
+ 
+Packet what **comes inside** from outside called Ingress Traffic
+Let's assume we are running a **web server** inside **NS1** which is listening on port **5000**. 
+If we try to access this server from outside, how the packet will flow?
 
 <a href="https://ibb.co/Fbpsxm6"><img src="https://i.ibb.co/TByKvYc/Ingress-Flow-drawio.png" alt="Ingress-Flow-drawio" border="0" width="1000"></a>
 <center> Better Resolution: <a href="https://ibb.co/Fbpsxm6" target="_blank"> Ingress Traffic Flow </a>  <center>
@@ -120,7 +121,7 @@ Output:
     8: ceth0@if9: <BROADCAST,MULTICAST> mtu 1500 qdisc noop state DOWN mode DEFAULT group default qlen 1000
         link/ether 3e:32:88:75:f1:43 brd ff:ff:ff:ff:ff:ff link-netnsid 0
 
-We need to turn UP both the **lo** and **ceth0** and assign an **IP** address to ceth0
+We need to turn **UP** both the lo (*loopback interface*) and ceth0 and assign an **IP address** to **ceth0**
 
     ip link set lo up
     ip link set ceth0 up
@@ -139,7 +140,7 @@ output:
         inet 192.168.0.2/16 scope global ceth0
            valid_lft forever preferred_lft forever
 
- Notice! chek the ceth0 carefully, you can see the **LOWERLAYERDOWN**, which means the other side of the cable **veth0** which is still **DOWN**, but we will turn it UP now.
+ Notice! chek ceth0 carefully, you can see the **LOWERLAYERDOWN**, which means the other side of the cable **veth0** which is still **DOWN**, but we will turn it UP now.
 
     exit
 logging out from Namespace **netns1**
@@ -163,6 +164,7 @@ Communication between Namespace to Bridge is Successful.
 Logging out from the Namespace 1
 
 ## NS1 to RootNS Communication
+
 Our objective is here to stablish communication between Namespace *netns1* **ceth0** to *Root NS* **eth0** via *Bridge* **br0** (Default GW)
 
 <a href="https://ibb.co/q5vxSkn"><img src="https://i.ibb.co/SrzJjRx/ns-to-root.png" alt="ns-to-root" border="0"></a>
@@ -198,7 +200,7 @@ Output:
     192.168.0.0     0.0.0.0         255.255.0.0     U     0      0        0 ceth0
 
 **Root Cause:**    
-> Opps, The IP doesn't match with any route table entry. Route table
+> Ops, The IP doesn't match with any route table entry. Route table
 > match an IP Address using *Longest Prefix Matching* Algorithm and
 > Looks like the Karnel Level **Route Table**  has **no information** to
 > send the packet **out** to **eth0** 172.31.8.154/20 network.
@@ -231,6 +233,7 @@ Output:
     64 bytes from 172.31.8.154: icmp_seq=3 ttl=64 time=0.066 ms 
 
 ## Ping 8.8.8.8 from NS1
+
 So far we have done **NS** to **Bridge** and **Bridge** to **RootNS** Communication. Now let's take a walk outside.
 
 <a href="https://ibb.co/89r1khT"><img src="https://i.ibb.co/Xt7cHwN/ns-to-internet.png" alt="ns-to-internet" border="0" width="800"></a>
@@ -238,13 +241,14 @@ So far we have done **NS** to **Bridge** and **Bridge** to **RootNS** Communicat
 Let's ping **8.8.8.8** from **netns1**
 
     ping 8.8.8.8
-Outout:
+Output:
 
     PING 8.8.8.8 (8.8.8.8) 56(84) bytes of data.
 
-Now this scenario is little bit tricky, it's not like the Network is unreachable but some how the packet is blocked or stuck in between somewhere.  Lucky that Linux has a binary named **tcpdump** to observe the network interfaces to **debug** the **packet flow**.  
+Now this scenario is little bit tricky, it's not like the Network is unreachable but some how the packet is blocked or stuck in between somewhere.  Lucky that Linux has a utility bin named **tcpdump** to observe the network interfaces to **debug** the **packet flow**.  
 
 ### Packet Debugging
+
 Now open a new SSH session and observe our gateway **br0** in **RootNS** first. 
 
     sudo tcpdump -i br0 icmp
@@ -273,7 +277,7 @@ output: 0
 **Root Cause**: IP Forwarding is diabled. Lets **Enable IP Forwarding**
 
     sudo nano /proc/sys/net/ipv4/ip_forward
-change o to 1 and save it, then check it again
+change it from 0 to 1 and save it, then check it again
 
     cat /proc/sys/net/ipv4/ip_forward
 
@@ -290,8 +294,8 @@ Output:
     07:39:05.568071 IP ip-192-168-0-2.ap-south-1.compute.internal > dns.google: ICMP echo request, id 63613, seq 2693, length 64
     07:39:06.592091 IP ip-192-168-0-2.ap-south-1.compute.internal > dns.google: ICMP echo request, id 63613, seq 2694, length 64
 
-But still the ping it stuck in **netns1**  why is that? 
-Notice! that the source ip is 192.168.0.2 which is trying to reach out to the google dns 8.8.8.8. 192.168.0.2 is a **private ip**
+But still the ping is stuck in **netns1**  why is that? 
+Notice! that the source ip is 192.168.0.2 which is trying to reach out to the google dns 8.8.8.8. with source ip 192.168.0.2 which is a **private ip**
 
 ### Why I can not access internet through Private IP ?
 
@@ -300,17 +304,16 @@ Think of your **IP address** like your **full postal address**. Letters sent to 
 A **Private IP** address is like having **my bedroom** as the **whole address**. It's Useful inside the house, but of **no use** whatsoever for a letter **trying to reach** you **from another country**. The poor postman does not know where to start, so the letter gets put in the bin. and you get no data.
 
 Simply put, where would the return packets go? 
-You may be able to send a packet out (*though it’d probably be dropped by a firewall rather early*), but how would anyone get a packet **back to you**? Packets are solely addressed by IP address, and private IPs are, by design, **not unique**. If you do manage to get a packet to a server with a return address of **192.168.0.1**, where would it send its answer?
+You may be able to send a packet out (*though it’d probably be dropped by a firewall rather early*), but how would anyone get a packet **back to you**? Packets are solely addressed by IP address, and private IPs are, by design, **not unique**. If you do manage to get a packet to a server with a return address of **192.168.0.2**, where would it send its answer?
 
 ### Solution
-To resolve this problem we somehow need to convert the private ip to public ip. This is called **NAT** (*Network Address Translation*) 
+To resolve this problem we somehow need to convert the private ip to public ip. This is called [**NAT**](https://whatismyipaddress.com/nat) (*Network Address Translation*) 
 
-We need to add a **NAT** rule in **IP Table** into the **POSTROUTING** chain
+We need to add a **SNAT** (*Source NAT*) rule in **IP Table** into the **POSTROUTING** chain
 
     sudo iptables -t nat -A POSTROUTING -s 192.168.0.0/16 ! -o br0 -j MASQUERADE
 
-We have Done **SNAT** ( Source IP NAT ) here
-it means we are adding (-A) a IP MASQUERADE Rule into the NAT table (-t) where packets coming from source (-s) 192.168.0.0/16  network via output (-o) interface  br0
+We have Done **Souce IP NAT** here, it means we are appending (-A) an IP MASQUERADE Rule into the NAT table (-t) where packets coming from source network (-s) 192.168.0.0/16 via output (-o) interface  br0
 
 More about [iptables](https://medium.com/skilluped/what-is-iptables-and-how-to-use-it-781818422e52)
 
@@ -325,18 +328,18 @@ Output:
     64 bytes from 8.8.8.8: icmp_seq=2 ttl=109 time=1.68 ms
     64 bytes from 8.8.8.8: icmp_seq=3 ttl=109 time=1.71 ms
 
-Eureka!! We have done it. We are able to ping outside 
+Eureka!! We have done it. Now we are able to ping outside 
 
-## Reach to your NS1 from outside
+## Reach to NS1 from Outside
 
 ### Run a HTTP Server in NS1
-Let' log into the **netns1** and fpr example run python3 **http** module listening to **port 5000**
+Let' log into the **netns1** and run a service, for example run python3 **http** module listening to **port 5000**
 
     sudo nsenter --net=/var/run/netns/netns1
     python3 -m http.server --bind 192.168.0.2 5000
 
 ### Check Accessibility
-Open a new SSH Session and  let's try to access from RootNS, Let's Check access first.
+Open a new SSH Session and  let's try to access from **RootNS**, Let's Check access first.
 
     telnet 192.168.0.2 5000
 output:
@@ -345,7 +348,7 @@ output:
     Connected to 192.168.0.2.
     Escape character is '^]'.
     
-Success! Now initiate a curl request 
+Success! Now initiate a curl request  
 
     curl 192.168.0.2:5000
 output:
@@ -371,10 +374,9 @@ output:
     <hr>
     </body>
     </html>
-Awesome we have go the default response. That mean out HTTP server in Up and Running on port 5000.
+Awesome, we have got the default response from the server. That means our HTTP server in Up and Running, Listening on port 5000.
 
-Let's try to access using `public-ip:5000` from outside. In my case my VM has public ip 52.66.84.112
-so I will hit `52.66.84.112:5000` from browser. 
+Let's try to access using `public-ip:5000` from outside. In my case the VM has public ip **52.66.84.112**. Hence, I will request to `52.66.84.112:5000` from my desktop browser. 
 
 <a href="https://ibb.co/LP0gdn2"><img src="https://i.ibb.co/xs2gqJR/Capture.png" alt="Capture" border="0" width="450"></a>
 
@@ -411,8 +413,3 @@ Congratulation! We have configured both Ingress and Egress Traffic successfully.
 9. https://medium.com/skilluped/what-is-iptables-and-how-to-use-it-781818422e52
 
 10. https://www.quora.com/Why-can-we-not-access-the-Internet-through-a-private-IP
-
-
-
-
-
