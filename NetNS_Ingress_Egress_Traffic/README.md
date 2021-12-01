@@ -7,7 +7,6 @@ In this doccumentation, we will cover
  3. Internet Connectivity | ping 8.8.8.8
  4. Access to Namespace from Outside of the network
 
-For Better View
 [Download PDF](https://github.com/dipanjal/DevOps/blob/main/NetNS_Ingress_Egress_Traffic/Network_NS_Egress_Ingress_Traffic_Configuration.pdf)
 
 ## Egress Packet Flow 
@@ -29,9 +28,9 @@ So, how the network packet will travle?
 
 ```mermaid
 graph LR
-A[NS1-ceth0] -- Ping --> B(veth0-Bridge-br0)
-B(veth0-Bridge-br0) -- Ping --> C[ROOT-eth0]
-C[ROOT-eth0] -- Ping<SNAT> --> D((Internet))
+A(NS1-ceth0) -- Ping --> B(veth0-Bridge-br0)
+B(veth0-Bridge-br0) -- Ping --> C(ROOT-eth0)
+C(ROOT-eth0) -- Ping<SNAT> --> D((Internet))
 ```
 
 ## Ingress Packet Flow 
@@ -50,9 +49,9 @@ if we try to access this application from outside, how the packet will flow?
 
 ```mermaid
 graph LR
-A((Internet)) -- Request --> B[ROOT-eth0]
-B[ROOT-eth0] -- Request<DNAT> --> C(veth0-Bridge-br0)
-C(veth0-Bridge-br0) -- Request -->  D[ceth0-NS1]
+A((Internet)) -- Request --> B(ROOT-eth0)
+B(ROOT-eth0) -- Request<DNAT> --> C(veth0-Bridge-br0)
+C(veth0-Bridge-br0) -- Request -->  D(ceth0-NS1)
 ```
  
 ## Create Network Namespace
@@ -410,6 +409,27 @@ Let's try again from your browser.
 
 Congratulation! We have configured both Ingress and Egress Traffic successfully.
 
+## Reference
+
+1. https://serverfault.com/questions/684439/how-to-connect-custom-network-namespace-to-root-network-namespace
+
+2. https://wiki.archlinux.org/title/Network_bridge
+
+3. https://unix.stackexchange.com/questions/255484/how-can-i-bridge-two-interfaces-with-ip-iproute2
+
+4. https://gist.github.com/dpino/6c0dca1742093346461e11aa8f608a99
+
+5. https://medium.com/@abhishek.amjeet/container-networking-using-namespaces-part1-859d317ca1b8
+
+6. https://serverfault.com/questions/568839/linux-network-namespaces-ping-fails-on-specific-veth
+
+7. https://devconnected.com/how-to-add-route-on-linux/
+
+8. https://www.ibm.com/support/pages/using-tcpdump-verify-icmp-polling
+
+9. https://medium.com/skilluped/what-is-iptables-and-how-to-use-it-781818422e52
+
+10. https://www.quora.com/Why-can-we-not-access-the-Internet-through-a-private-IP
 
 
 
