@@ -384,7 +384,8 @@ This is expected. Likewise, we need to do **DNAT** (Destination IP NAT)
 
 Meaning, any request from exact `matched (-m)` **tcp** `protocol (-p)`  with `Destination (-d)` IP 172.31.8.154 (*eth0 ip*) with `destination port (--dport)` 5000 will jump -j into **DNAT** rule to destination `192.168.0.2:5000`
 
-Let's try again from your browser.
+Let's try again from your browser. 
+
 <a href="https://imgbb.com/"><img src="https://i.ibb.co/5jBbx8g/Capture.png" alt="Capture" border="0"></a>
 
 Congratulation! We have configured both Ingress and Egress Traffic successfully.
