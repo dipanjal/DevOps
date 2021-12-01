@@ -9,50 +9,32 @@ In this doccumentation, we will cover
 
 [Download PDF](https://github.com/dipanjal/DevOps/blob/main/NetNS_Ingress_Egress_Traffic/Network_NS_Egress_Ingress_Traffic_Configuration.pdf)
 
-## Egress Packet Flow 
-```mermaid
-sequenceDiagram 
-NS1 ->> Bridge: PACKET 1
-Bridge -->> ROOT: PACKET 1
-ROOT -->> OUTSIDE: PACKET 1 (SNAT)
-```
-Let's say we are doing ping request from the NS1 to google dns 8.8.8.8
+## Egress Packet Flow
+ 
+Packet what goes outside. Let's say we are doing ping request from the **NS1** to google dns **8.8.8.8**
 
     ping 8.8.8.8
 
-So, how the network packet will travle? 
+So, let's visualize how the network packet will travle? 
+
+<a href="https://ibb.co/YXY12hf"><img src="https://i.ibb.co/KDRf6WV/Egress-Flow-drawio.png" alt="Egress-Flow-drawio" border="0" width="1000"></a>
+<center> Better Resolution: <a href="https://ibb.co/YXY12hf" target="_blank"> Egress Traffic Flow </a>  <center>
 
  1. The packet will reach from NS1 **ceth0** to the Bridge **br0** via **Default Gateway**
  2. Packet will be **forwarded** from Bridge **br0** to RootNS **eth0** 
  3. Packet will go out from **eth0**  to **outside** using **SNAT**
 
-```mermaid
-graph LR
-A(NS1-ceth0) -- Ping --> B(veth0-Bridge-br0)
-B(veth0-Bridge-br0) -- Ping --> C(ROOT-eth0)
-C(ROOT-eth0) -- Ping<SNAT> --> D((Internet))
-```
-
 ## Ingress Packet Flow 
-```mermaid
-sequenceDiagram 
-OUTSIDE ->> ROOT: PACKET 1
-ROOT -->> Bridge: PACKET 1 (DNAT)
-Bridge -->> NS1: PACKET 1
-```
-Let's assume we are running a server in NS1 listening on port 5000. 
-if we try to access this application from outside, how the packet will flow?
+
+Let's assume we are running a **web server** inside **NS1** listening on port **5000**. 
+If we try to access this application from outside, how the packet will flow?
+
+<a href="https://ibb.co/Fbpsxm6"><img src="https://i.ibb.co/TByKvYc/Ingress-Flow-drawio.png" alt="Ingress-Flow-drawio" border="0" width="1000"></a>
+<center> Better Resolution: <a href="https://ibb.co/Fbpsxm6" target="_blank"> Ingress Traffic Flow </a>  <center>
 
  1. Packet will reach from **outside**  to **eth0** 
  2. from **eth0** to **br0** using **DNAT**
  3. **br0** (Default GW) to NS1 **ceth0** 
-
-```mermaid
-graph LR
-A((Internet)) -- Request --> B(ROOT-eth0)
-B(ROOT-eth0) -- Request<DNAT> --> C(veth0-Bridge-br0)
-C(veth0-Bridge-br0) -- Request -->  D(ceth0-NS1)
-```
  
 ## Create Network Namespace
 
@@ -98,11 +80,12 @@ Output:
     64 bytes from 192.168.0.1: icmp_seq=3 ttl=64 time=0.042 ms
 
 ## Configure a veth cable
-veth cable
-```mermaid
-graph LR
-A(veth0) --veth peer---- B(ceth0)
-```
+
+<center>
+<a href="https://ibb.co/Cn8ybHM"><img src="https://i.ibb.co/y8PC6QY/veth-peer.png" alt="veth-peer" border="0"></a><br />
+<b> veth cable </b>
+</center>
+
     sudo ip link add veth0 type veth peer name ceth0
     
 **veth0** will be connected to the **Bridge** while the other side of the cable **ceth0** will be connected to the **netns1**. Now verify the interfaces are created or not.
@@ -120,20 +103,13 @@ After that, Connect the other side of the cable **veth0** into the **Bridge**
     sudo ip link set veth0 master br0
 
 Now let's visualize the outcome
-```mermaid
-graph LR
-A(Bridge:-veth0) --veth peer---- B(ceth0-:NS1)
-```
 
-##  NS1 to Bridge Communication
+<a href="https://ibb.co/CWvnL8J"><img src="https://i.ibb.co/pnZ3qwW/ns-to-bridge-cable.png" alt="ns-to-bridge-cable" border="0"></a>
+
+NS1 is connected to the Bridge with a veth cable
+
+##  Stablish NS1 to Bridge Communication
 Our objective is here to stablish communication between Namespace **netns1** to Bridge **br0**
-
-```mermaid
-graph LR
-A(NS1:-ceth0) --Packet--> B(veth0-:Bridge)
-B(veth0-:Bridge) --Packet--> C(Bridge:-br0)
-C(Bridge:-br0) --Packet--> D(eth0-:RootNS)
-```
 
 Enter into **netns1** namespace and check the interfaces.
 
@@ -189,8 +165,11 @@ Communication between Namespace to Bridge is Successful.
 Logging out from the Namespace 1
 
 ## NS1 to RootNS Communication
-Our objective is here to stablish communication between Namespace *netns1* **ceth0** to *Root NS* **eth0** via *Bridge* **br0**
-Lookup eth0 IP address
+Our objective is here to stablish communication between Namespace *netns1* **ceth0** to *Root NS* **eth0** via *Bridge* **br0** (Default GW)
+
+<a href="https://ibb.co/q5vxSkn"><img src="https://i.ibb.co/SrzJjRx/ns-to-root.png" alt="ns-to-root" border="0"></a>
+
+Check **IP** address assigned to **eth0**
 
     ip addr show eth0
 Output
@@ -202,9 +181,9 @@ Output
         inet6 fe80::8b8:74ff:fec1:7e1c/64 scope link
            valid_lft forever preferred_lft forever
            
-So **eth0** IP Adress is **172.31.8.154**
+So **172.31.8.154** IP addrees is assigned to **eth0** of **RootNS**
 
-Now, log into the Namespace **netns1** and ping to 172.31.8.154
+Now, log into the Namespace **netns1** and **ping** to 172.31.8.154
 
     sudo nsenter --net=/var/run/netns/netns1
     ping 172.31.8.154
@@ -254,8 +233,11 @@ Output:
     64 bytes from 172.31.8.154: icmp_seq=3 ttl=64 time=0.066 ms 
 
 ## Ping 8.8.8.8 from NS1
-So far we have done NS to Bridge and Bridge to Root NS Communication. Now let's take a walk outside.
-Let's ping 8.8.8.8 from netns1
+So far we have done **NS** to **Bridge** and **Bridge** to **RootNS** Communication. Now let's take a walk outside.
+
+<a href="https://ibb.co/89r1khT"><img src="https://i.ibb.co/Xt7cHwN/ns-to-internet.png" alt="ns-to-internet" border="0" width="800"></a>
+
+Let's ping **8.8.8.8** from **netns1**
 
     ping 8.8.8.8
 Outout:
@@ -284,7 +266,7 @@ Output:
     tcpdump: verbose output suppressed, use -v or -vv for full protocol decode
     listening on eth0, link-type EN10MB (Ethernet), capture size 262144 bytes
 
-No packets, There is something wrong. Let's check IPv4 forwarding  **/proc/sys/net/ipv4/ip_forward**
+Ops! No packets, There is something wrong. Let's check IPv4 forwarding  **/proc/sys/net/ipv4/ip_forward**
 
     cat /proc/sys/net/ipv4/ip_forward
 
