@@ -1,4 +1,4 @@
-# Network Namespace with Internet and Ingress Traffic
+# Network Namespace with Egress and Ingress Traffic
 
 In this doccumentation, we will cover
 
