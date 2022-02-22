@@ -7,6 +7,10 @@ In this doccumentation, we will cover
  3. Internet Connectivity | ping 8.8.8.8
  4. Access to Namespace from Outside of the network
 
+## What is Network Namespace ? 
+Network namespace is a Linux kernel feature allows us to isolate network environments through virtualization. For example, using network namespaces, you can create separate network interfaces and routing tables that are isolated from the rest of the system and operate independently. Network Namespace is a core component of Docker Networking. Today we are going to simulate the Docker Networking from Scratch.
+
+
 ## Egress Packet Flow
  
 Packet what **goes outside** called Egress Traffic. Let's say we are doing ping request from the **NS1** to google dns **8.8.8.8**
